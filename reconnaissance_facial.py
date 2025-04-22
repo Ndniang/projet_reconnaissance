@@ -1,16 +1,15 @@
 import streamlit as st
-import cv2 # cv2 ( OpenCV) est une bibliothèque puissante pour le traitement d'image et la vision par ordinateur
+import cv2
 import numpy as np
-from PIL import Image  # le module PIL (Python Imaging Library), qui est une bibliothèque de traitement d’image en Python
-import tempfile  #qui permet de créer des fichiers et dossiers temporaires en Python
-import os  #qui sert à interagir avec le système d’exploitation (Operating System).
-#Ça permet de manipuler des fichiers, dossiers, chemins, variables d’environnement
+from PIL import Image
+import tempfile
+import os
 
-#Ajoutez des instructions à l’interface de l’application Streamlit pour guider l’utilisateur sur la façon d’utiliser l’application.
-
+# Interface utilisateur
 st.markdown("""
-Bienvenue dans l'application de détection de visages ! 👋  
-Voici comment l'utiliser :
+# 🧠 DETECTION VISAGES 
+Bienvenue dans notre appli ! 👋  
+Utilisation :
 1. Téléchargez une image contenant des visages.
 2. Réglez les paramètres `scaleFactor` et `minNeighbors` si nécessaire.
 3. Choisissez la couleur du rectangle pour la détection.
@@ -18,14 +17,51 @@ Voici comment l'utiliser :
 5. Enregistrez l'image détectée si vous le souhaitez.
 """)
 
-#Ajoutez une fonctionnalité pour enregistrer les images avec les visages détectés sur l'appareil de l'utilisateur
-uploaded_file = st.file_uploader("Téléchargez une image", type=["jpg", "jpeg", "png"])
+# Téléversement de l'image
+uploaded_file = st.file_uploader("📤 Téléchargez une image", type=["jpg", "jpeg", "png"])
+color = st.color_picker("🎨 Choisissez la couleur du rectangle", "#00FF00")
+minNeighbors = st.slider("🔍 Ajustez le paramètre minNeighbors", 1, 10, 5)
+scaleFactor = st.slider("🔍 Ajustez le paramètre scaleFactor", 1.01, 1.5, 1.1, step=0.01)
 
-#Ajoutez une fonctionnalité permettant à l'utilisateur de choisir la couleur des rectangles dessinés autour des visages détectés.
-color = st.color_picker("Choisissez la couleur du rectangle", "#00FF00")
+# Chargement du classificateur
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-#Ajoutez une fonctionnalité pour ajuster le paramètre minNeighbors dans la fonction face_cascade.detectMultiScale().
-minNeighbors = st.slider("Ajustez le paramètre minNeighbors", 1, 10, 5)
+# Initialisation de la variable 'faces' à vide pour éviter les erreurs
+faces = []
 
-#Ajoutez une fonctionnalité pour ajuster le paramètre scaleFactor dans la fonction face_cascade.detectMultiScale().
-scaleFactor = st.slider("Ajustez le paramètre scaleFactor", 1.01, 1.5, 1.1, step=0.01)
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+    img_np = np.array(image.convert('RGB'))
+    gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+
+    if st.button("👁️ Détecter les visages"):
+        faces = face_cascade.detectMultiScale(
+            gray,
+            scaleFactor=scaleFactor,
+            minNeighbors=minNeighbors
+        )
+
+        st.success(f"{len(faces)} visage(s) détecté(s).")
+
+        for (x, y, w, h) in faces:
+            color_bgr = tuple(int(color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+            cv2.rectangle(img_np, (x, y), (x + w, y + h), color_bgr, 2)
+
+        st.image(img_np, caption='🖼️ Image avec visages détectés', use_column_width=True)
+
+        result_image = Image.fromarray(img_np)
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        result_image.save(temp_file.name)
+
+        with open(temp_file.name, "rb") as file:
+            st.download_button(
+                label="📥 Télécharger l'image détectée",
+                data=file.read(),  # Lire le contenu ici pour le détacher du fichier
+                file_name="visages_detectes.png",
+                mime="image/png"
+            )
+
+        # ✅ Fermer d'abord le fichier, puis supprimer
+        temp_file.close()
+        os.remove(temp_file.name)
+
