@@ -47,7 +47,8 @@ if uploaded_file is not None:
             color_bgr = tuple(int(color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
             cv2.rectangle(img_np, (x, y), (x + w, y + h), color_bgr, 2)
 
-        st.image(img_np, caption='🖼️ Image avec visages détectés', use_column_width=True)
+        st.image(img_np, caption='🖼️ Image avec visages détectés', use_container_width=True)
+
 
         result_image = Image.fromarray(img_np)
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
@@ -64,4 +65,3 @@ if uploaded_file is not None:
         # ✅ Fermer d'abord le fichier, puis supprimer
         temp_file.close()
         os.remove(temp_file.name)
-
