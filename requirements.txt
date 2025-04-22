@@ -1,2 +1,3 @@
 scikit-learn
+cv2
 streamlit
