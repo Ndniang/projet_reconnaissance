@@ -1,5 +1,3 @@
-pip install opencv-python
-
 import streamlit as st
 import cv2 # cv2 ( OpenCV) est une bibliothèque puissante pour le traitement d'image et la vision par ordinateur
 import numpy as np
